@@ -9,7 +9,7 @@
                 "settings": [
                     {
                         "key": "frames",
-                        "type": "STRING",
+                        "type": "INT_RANGES",
                         "value": ""
                     },
                     {
@@ -158,7 +158,7 @@
                     },
                     {
                         "key": "output_range",
-                        "type": "INT_RANGE",
+                        "type": "INT_RANGES",
                         "value": "0-0"
                     }
                 ],
@@ -175,7 +175,7 @@
                     },
                     {
                         "key": "capture_frames",
-                        "type": "INT_RANGE",
+                        "type": "INT_RANGES",
                         "value": "0-0"
                     },
                     {
