@@ -47,7 +47,7 @@ const char* GetSettingToken(SettingType type) {
         "BOOL_NUMERIC",  // SETTING_BOOL_NUMERIC_DEPRECATED
         "ENUM",          // SETTING_ENUM
         "FLAGS",         // SETTING_FLAGS
-        "INT_RANGE",     // SETTING_RANGE_INT
+        "INT_RANGES",    // SETTING_RANGE_INT
         "VUID_EXCLUDE"   // SETTING_VUID_FILTER
     };
     static_assert(countof(table) == SETTING_COUNT, "The tranlation table size doesn't match the enum number of elements");
