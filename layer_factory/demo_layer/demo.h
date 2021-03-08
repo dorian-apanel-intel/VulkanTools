@@ -20,21 +20,60 @@
 #pragma once
 
 #include <unordered_map>
+#include <set>
 #include "vulkan/vulkan.h"
 #include "vk_layer_logging.h"
 #include "layer_factory.h"
+
+struct MemoryState {
+    std::vector<char> bytes;
+    void* srcAddress;
+
+    MemoryState(void* data, size_t length) {
+        srcAddress = data;
+        bytes.resize(length);
+    }
+
+    void Remember() { memcpy(bytes.data(), srcAddress, bytes.size()); }
+
+    void Check() {
+        if (memcmp(srcAddress, bytes.data(), bytes.size()) != 0) {
+            int nothing = 0;
+            nothing++;
+        }
+    }
+};
 
 class MemDemo : public layer_factory {
    public:
     // Constructor for state_tracker
     MemDemo() : number_mem_objects_(0), total_memory_(0), present_count_(0){};
 
-    void PreCallApiFunction(const char *api_name);
+    VkResult PostCallMapMemory(VkDevice device, VkDeviceMemory memory, VkDeviceSize offset, VkDeviceSize size,
+                                       VkMemoryMapFlags flags, void** ppData, VkResult result) override;
+    void PostCallUnmapMemory(VkDevice device, VkDeviceMemory memory) override;
 
-    VkResult PostCallAllocateMemory(VkDevice device, const VkMemoryAllocateInfo *pAllocateInfo,
-                                    const VkAllocationCallbacks *pAllocator, VkDeviceMemory *pMemory, VkResult result);
+    VkResult PostCallBindBufferMemory(VkDevice device, VkBuffer buffer, VkDeviceMemory memory, VkDeviceSize memoryOffset,
+                                              VkResult result) override;
 
-    void PreCallFreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks *pAllocator);
+    VkResult PostCallDebugMarkerSetObjectNameEXT(VkDevice device, const VkDebugMarkerObjectNameInfoEXT* pNameInfo,
+                                                         VkResult result) override;
+
+    void PostCallDestroyBuffer(VkDevice device, VkBuffer buffer, const VkAllocationCallbacks* pAllocator) override;
+
+    void PostCallCmdCopyBuffer(VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount,
+                                       const VkBufferCopy* pRegions) override;
+
+    VkResult PostCallQueueSubmit(VkQueue queue, uint32_t submitCount, const VkSubmitInfo* pSubmits, VkFence fence,
+                                         VkResult result) override;
+
+    VkResult PreCallGetFenceStatus(VkDevice device, VkFence fence) override;;
+
+    VkResult PostCallResetCommandBuffer(VkCommandBuffer commandBuffer, VkCommandBufferResetFlags flags, VkResult result) override;
+
+    void PostCallDestroyFence(VkDevice device, VkFence fence, const VkAllocationCallbacks* pAllocator) override;;
+
+    VkResult PostCallResetFences(VkDevice device, uint32_t fenceCount, const VkFence* pFences, VkResult result) override;;
 
     VkResult PreCallQueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *pPresentInfo);
 
@@ -43,4 +82,19 @@ class MemDemo : public layer_factory {
     VkDeviceSize total_memory_;
     uint32_t present_count_;
     std::unordered_map<VkDeviceMemory, VkDeviceSize> mem_size_map_;
+
+    std::unordered_map<VkBuffer, uint8_t*> staticJointsmatricesBuffers;
+    std::mutex staticJointsMatricesBuffersMutex;
+
+    std::unordered_map<VkCommandBuffer, std::vector<MemoryState>> unsubmittedMemoryStates;
+    std::mutex unsubmittedMemoryStatesMutex;
+
+    std::unordered_map<VkFence, std::vector<MemoryState>> submittedMemoryStates;
+    std::mutex submittedMemoryStatesMutex;
+
+    std::unordered_map<VkDeviceMemory, uint8_t*> mappedMemories;
+    std::mutex mappedMemoriesMutex;
+
+    std::unordered_map<VkBuffer, uint8_t*> mappedBuffers;
+    std::mutex mappedBuffersMutex;
 };
